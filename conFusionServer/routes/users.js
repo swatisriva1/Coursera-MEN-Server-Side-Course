@@ -10,7 +10,7 @@ var router = express.Router();
 router.use(bodyParser.json());
 
 /* GET users listing. */
-router.get('/', function(req, res, next) {
+router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
   res.send('respond with a resource');
 });
 
@@ -104,7 +104,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
 });
 
 
-router.get('/logout', (req, res) => {
+router.get('/logout', (req, res, next) => {
   if(req.session) {   // session must exist i.e. user must be logged in to logout
     req.session.destroy();  // server-side info pertaining to session is removed --> session is invalidated
     res.clearCookie('session-id');   // ensure user cannot use expired session to contact server

@@ -27,7 +27,7 @@ dishRouter.route('/')  // use / because we are mounting this router to the /dish
     .catch((err) => next(err));
 })
 // for post, first middleware is to verify user; if successful, move on to next function; if failure, passport authenticate handles showing error
-.post(authenticate.verifyUser, (req, res, next) => {   // for post requests, req.body will contain data
+.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {   // for post requests, req.body will contain data
     Dishes.create(req.body)   // body parser has already parsed out the request body and put it in req.body
     .then((dish) => {
         console.log('Dish created ', dish);
@@ -37,11 +37,11 @@ dishRouter.route('/')  // use / because we are mounting this router to the /dish
     }, (err) => next(err))  // pass off error to error handler of application
     .catch((err) => next(err));
 })
-.put(authenticate.verifyUser, (req, res, next) => {
+.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes');
 })
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Dishes.remove({})
     .then((resp) => {
         res.statusCode = 200;
@@ -63,11 +63,11 @@ dishRouter.route('/:dishId')
     }, (err) => next(err))  // pass off error to error handler of application
     .catch((err) => next(err));
 })
-.post(authenticate.verifyUser, (req, res, next) => {   // for post requests, req.body will contain data
+.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {   // for post requests, req.body will contain data
     res.statusCode = 403;
     res.end('POST operation not supported on /dishes/' + req.params.dishId);
 })
-.put(authenticate.verifyUser, (req, res, next) => {
+.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Dishes.findByIdAndUpdate(req.params.dishId, {
         $set: req.body 
     }, { new: true })
@@ -78,7 +78,7 @@ dishRouter.route('/:dishId')
     }, (err) => next(err))  // pass off error to error handler of application
     .catch((err) => next(err));
 })
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Dishes.findByIdAndRemove(req.params.dishId)
     .then((resp) => {
         res.statusCode = 200;
@@ -144,7 +144,7 @@ dishRouter.route('/:dishId/comments')  // use / because we are mounting this rou
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes/' + req.params.dishId + '/comments');
 })
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if(dish != null) {
