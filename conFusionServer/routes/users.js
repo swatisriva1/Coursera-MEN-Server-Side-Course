@@ -11,7 +11,14 @@ router.use(bodyParser.json());
 
 /* GET users listing. */
 router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
-  res.send('respond with a resource');
+  User.find({})
+  .then((users) => {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.json(users);
+  })
+  .catch((err) => next(err));
+  // res.send('respond with a resource');
 });
 
 router.post('/signup', (req, res, next) => { // username and pw contained in req body
@@ -103,7 +110,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
   // }
 });
 
-
+// note that using JWT, there is not a straightforward way to manually logout; instead wait for token to expire
 router.get('/logout', (req, res, next) => {
   if(req.session) {   // session must exist i.e. user must be logged in to logout
     req.session.destroy();  // server-side info pertaining to session is removed --> session is invalidated
