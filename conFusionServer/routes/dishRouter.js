@@ -197,24 +197,35 @@ dishRouter.route('/:dishId/comments/:commentId')
 })
 .put(authenticate.verifyUser, (req, res, next) => {
     Dishes.findById(req.params.dishId)
+    .populate('comments.author')
     .then((dish) => {
         if(dish != null && dish.comments.id(req.params.commentId) != null) {
-            if(req.body.rating) {
-                dish.comments.id(req.params.commentId).rating = req.body.rating; // no specific method to update sub-documents so use this approach
-            }
-            if(req.body.comment) {
-                dish.comments.id(req.params.commentId).comment = req.body.comment;
-            }
-            dish.save()  // save dish
-            .then((dish) => {
-                Dishes.findById(dish._id)
-                .populate('comments.author')
+            const commentAuthor = dish.comments.id(req.params.commentId).author._id;
+            if(commentAuthor.equals(req.user._id)) {
+                if(req.body.rating) {
+                    dish.comments.id(req.params.commentId).rating = req.body.rating; // no specific method to update sub-documents so use this approach
+                }
+                if(req.body.comment) {
+                    dish.comments.id(req.params.commentId).comment = req.body.comment;
+                }
+                dish.save()  // save dish
                 .then((dish) => {
-                    res.statusCode = 200;
-                    res.setHeader('Content-Type', 'application/json');
-                    res.json(dish);    // return updated dish
-                })
-            }, (err) => next(err)); 
+                    Dishes.findById(dish._id)
+                    .populate('comments.author')
+                    .then((dish) => {
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(dish);    // return updated dish
+                    })
+                }, (err) => next(err)); 
+            }
+            else {
+                err = new Error('You can only edit comments that you wrote. User with username ' 
+                    + dish.comments.id(req.params.commentId).author.username 
+                    + ' wrote this comment.');
+                err.status = 403;
+                return next(err);
+            }
         }
         else if (dish == null) {
             err = new Error('Dish ' + req.params.dishId + ' not found');
@@ -233,17 +244,27 @@ dishRouter.route('/:dishId/comments/:commentId')
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if(dish != null && dish.comments.id(req.params.commentId) != null) {
-            dish.comments.id(req.params.commentId).remove();  // remove specific comment
-            dish.save()  // save dish
-            .then((dish) => {
-                Dishes.findById(dish._id)
-                .populate('comments.author')
+            const commentAuthor = dish.comments.id(req.params.commentId).author._id;
+            if(commentAuthor.equals(req.user._id)) {
+                dish.comments.id(req.params.commentId).remove();  // remove specific comment
+                dish.save()  // save dish
                 .then((dish) => {
-                    res.statusCode = 200;
-                    res.setHeader('Content-Type', 'application/json');
-                    res.json(dish);    // return updated dish
-                })
-            }, (err) => next(err)); 
+                    Dishes.findById(dish._id)
+                    .populate('comments.author')
+                    .then((dish) => {
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(dish);    // return updated dish
+                    })
+                }, (err) => next(err)); 
+            }
+            else {
+                err = new Error('You can only delete comments that you wrote. User with username ' 
+                    + dish.comments.id(req.params.commentId).author.username 
+                    + ' wrote this comment.');
+                err.status = 403;
+                return next(err);
+            }
         }
         else if (dish == null) {
             err = new Error('Dish ' + req.params.dishId + ' not found');
